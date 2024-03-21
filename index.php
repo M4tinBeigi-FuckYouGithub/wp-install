@@ -1,92 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Bar Example</title>
+<style>
+.progress-bar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background-color: #f1f1f1;
+  z-index: 9999;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #4caf50;
+}
+</style>
+</head>
+<body>
+<div class="progress-bar-container">
+  <div class="progress-bar" style="width: 0;"></div>
+</div>
+
 <?php
 
-// تنظیمات
-$file_name = basename( __FILE__ ); // نام فایل فعلی
-$new_file_name = 'wp-rick.php'; // نام جدید فایل
-
-// کپی فایل
-copy( $file_name, $new_file_name );
-
-// اعلان موفقیت
-echo 'فایل با موفقیت کپی شد.';
-
-
-// تنظیمات
-$url = 'https://wordpress.org/latest.zip'; // URL فایلی که می خواهید دانلود کنید
-$file_name = 'wordpress.zip'; // نام فایلی که می خواهید ذخیره کنید
-$extract_dir = dirname( __FILE__ ); // مسیر ذخیره فایل
-
-// دانلود فایل
-$file = file_get_contents( $url );
-if ( $file === FALSE ) {
-  echo 'خطا در دانلود فایل';
-  exit;
-}
-
-// ذخیره فایل
-file_put_contents( $extract_dir . '/' . $file_name, $file );
-
-// استخراج فایل
-$zip = new ZipArchive;
-if ( $zip->open( $extract_dir . '/' . $file_name ) !== TRUE ) {
-  echo 'خطا در استخراج فایل';
-  exit;
-}
-
-$zip->extractTo( $extract_dir );
-$zip->close();
-
-// اعلان موفقیت
-echo 'فایل با موفقیت دانلود و از حالت فشرده خارج شد.';
-
-
-
-// تنظیمات
-$source_dir = $extract_dir . '/wordpress'; // مسیر پوشه wordpress
-$target_dir = $extract_dir; // مسیر روت هاست
-
-// بررسی وجود پوشه wordpress
-if ( !is_dir( $source_dir ) ) {
-  echo 'پوشه wordpress یافت نشد.';
-  exit;
-}
-
-// انتقال محتویات پوشه
-$files = scandir( $source_dir );
-foreach ( $files as $file ) {
-  if ( $file === '.' || $file === '..' ) {
-    continue;
+class FileHandler {
+  public static function copyFile($source, $destination) {
+    if (!copy($source, $destination)) {
+      echo 'خطا در کپی فایل<br>';
+      exit;
+    }
   }
 
-  rename( $source_dir . '/' . $file, $target_dir . '/' . $file );
+  public static function downloadFile($url, $destination) {
+    $file = file_get_contents($url);
+    if ($file === FALSE) {
+      echo 'خطا در دانلود فایل<br>';
+      exit;
+    }
+    file_put_contents($destination, $file);
+  }
+
+  public static function extractFile($source, $destination) {
+    $zip = new ZipArchive;
+    if ($zip->open($source) !== TRUE) {
+      echo 'خطا در استخراج فایل<br>';
+      exit;
+    }
+    $zip->extractTo($destination);
+    $zip->close();
+  }
+
+  public static function moveContents($source, $destination) {
+    $files = scandir($source);
+    foreach ($files as $file) {
+      if ($file === '.' || $file === '..') {
+        continue;
+      }
+      rename($source . '/' . $file, $destination . '/' . $file);
+    }
+  }
 }
-
-// حذف پوشه wordpress
-rmdir( $source_dir );
-
-// اعلان موفقیت
-echo 'محتویات پوشه wordpress با موفقیت به روت هاست منتقل و پوشه wordpress حذف شد.';
 
 // تنظیمات
-$file_name = 'wordpress.zip'; // نام فایل
+$new_file_name = 'wp-rick.php'; // نام جدید فایل
+echo 'شروع کپی فایل...<br>';
+flush();
 
-// بررسی وجود فایل
-if ( !file_exists( $file_name ) ) {
-  echo 'فایل wordpress.zip یافت نشد.';
+// کپی فایل
+FileHandler::copyFile(__FILE__, $new_file_name);
+echo 'فایل با موفقیت کپی شد (20%).<br>';
+flush();
+
+// تنظیمات دانلود وردپرس
+$url = 'https://wordpress.org/latest.zip'; // URL فایلی که می خواهید دانلود کنید
+$file_name = 'wordpress.zip'; // نام فایلی که می خواهید ذخیره کنید
+$extract_dir = dirname(__FILE__); // مسیر ذخیره فایل
+echo 'شروع دانلود وردپرس...<br>';
+flush();
+
+// دانلود فایل
+FileHandler::downloadFile($url, $extract_dir . '/' . $file_name);
+echo 'وردپرس با موفقیت دانلود شد (40%).<br>';
+flush();
+
+// استخراج فایل
+echo 'شروع استخراج فایل...<br>';
+flush();
+FileHandler::extractFile($extract_dir . '/' . $file_name, $extract_dir);
+echo 'فایل از حالت فشرده خارج شد (60%).<br>';
+flush();
+
+// تنظیمات انتقال محتویات وردپرس
+$source_dir = $extract_dir . '/wordpress'; // مسیر پوشه wordpress
+$target_dir = $extract_dir; // مسیر روت هاست
+echo 'شروع انتقال محتویات...<br>';
+flush();
+FileHandler::moveContents($source_dir, $target_dir);
+echo 'محتویات پوشه wordpress به روت هاست منتقل شد (80%).<br>';
+flush();
+
+// حذف پوشه wordpress
+echo 'شروع حذف پوشه...<br>';
+flush();
+if (!is_dir($source_dir)) {
+  echo 'پوشه wordpress یافت نشد.<br>';
   exit;
 }
+rmdir($source_dir);
+echo 'پوشه wordpress حذف شد (90%).<br>';
+flush();
 
-// حذف فایل
-unlink( $file_name );
+// حذف فایل زیپ وردپرس
+echo 'شروع حذف فایل زیپ...<br>';
+flush();
+if (!file_exists($file_name)) {
+  echo 'فایل wordpress.zip یافت نشد.<br>';
+  exit;
+}
+unlink($file_name);
+echo 'فایل wordpress.zip حذف شد (100%).<br>';
+flush();
 
-// اعلان موفقیت
-echo 'فایل wordpress.zip با موفقیت حذف شد.';
-
-// دریافت نام دامنه
 $domain = $_SERVER['HTTP_HOST'];
+echo 'در حال هدایت به دامنه: ' . $domain . '<br>';
+flush();
 
-// باز کردن آدرس https://domain.com
-header( 'Location: https://' . $domain );
+header('Refresh: 5; URL=https://' . $domain);
 
 ?>
-
+</body>
+</html>
